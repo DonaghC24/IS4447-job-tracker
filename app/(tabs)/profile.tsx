@@ -8,13 +8,26 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type AppColors } from '@/context/ThemeContext';
 import { deleteUser } from '@/db/queries';
+import { exportApplicationsCsv } from '@/lib/exportCsv';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { mode, colors, toggleTheme } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting,  setDeleting]  = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await exportApplicationsCsv();
+    } catch (e: any) {
+      Alert.alert('Export Failed', e?.message ?? 'Could not export data.');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function handleLogout() {
     await logout();
@@ -74,6 +87,23 @@ export default function ProfileScreen() {
           />
         </View>
 
+        <TouchableOpacity
+          style={[styles.exportBtn, exporting && styles.btnDisabled]}
+          onPress={handleExport}
+          disabled={exporting}
+          accessibilityRole="button"
+          accessibilityLabel="Export applications as CSV"
+        >
+          {exporting ? (
+            <ActivityIndicator color="#2563eb" />
+          ) : (
+            <>
+              <FontAwesome name="download" size={14} color="#2563eb" style={styles.exportIcon} />
+              <Text style={styles.exportText}>Export to CSV</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
         <View style={styles.divider} />
 
         <TouchableOpacity
@@ -119,6 +149,14 @@ function makeStyles(c: AppColors) {
     },
     rowIcon:  { marginRight: 12 },
     rowLabel: { flex: 1, fontSize: 15, color: c.text, fontWeight: '500' },
+    exportBtn: {
+      width: '100%', paddingVertical: 14, borderRadius: 10,
+      backgroundColor: c.surface, borderWidth: 1.5, borderColor: '#2563eb',
+      alignItems: 'center', flexDirection: 'row', justifyContent: 'center',
+      gap: 8, marginBottom: 20,
+    },
+    exportIcon: {},
+    exportText: { color: '#2563eb', fontWeight: '700', fontSize: 15 },
     logoutBtn: {
       width: '100%', paddingVertical: 14, borderRadius: 10,
       backgroundColor: c.surface, borderWidth: 1.5, borderColor: '#2563eb',
