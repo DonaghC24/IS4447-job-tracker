@@ -1,21 +1,32 @@
-import React, { useMemo, useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  SafeAreaView, ActivityIndicator,
-} from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+// market screen - external api integration showing irish unemployment data
+// data is fetched on demand from eurostat rather than on screen load
+// handles loading, error and empty states explicitly
+
 import { useAppTheme, type AppColors } from '@/context/ThemeContext';
 import { getIrishUnemploymentTrend, type UnemploymentPoint } from '@/lib/csoApi';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function MarketScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  // state for the fetched data points, loading flag, error message and whether data has been loaded
   const [data, setData]       = useState<UnemploymentPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const [loaded, setLoaded]   = useState(false);
 
+  // fetch unemployment data from the eurostat api
   async function fetchData() {
     setLoading(true);
     setError(null);
@@ -30,9 +41,11 @@ export default function MarketScreen() {
     }
   }
 
+  // calculate the latest rate, previous rate and the change between them
   const latest   = data[data.length - 1];
   const previous = data[data.length - 2];
   const delta    = latest && previous ? +(latest.rate - previous.rate).toFixed(1) : null;
+  // used to scale bar widths relative to the highest rate in the dataset
   const maxRate  = data.length > 0 ? Math.max(...data.map(d => d.rate)) : 1;
 
   return (
@@ -44,7 +57,7 @@ export default function MarketScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
 
-        {/* Prompt */}
+        {/* initial prompt shown before data is loaded */}
         {!loaded && !loading && !error && (
           <View style={styles.prompt}>
             <FontAwesome name="line-chart" size={48} color={colors.borderLight} />
@@ -64,7 +77,7 @@ export default function MarketScreen() {
           </View>
         )}
 
-        {/* Loading */}
+        {/* loading spinner while the api request is in progress */}
         {loading && (
           <View style={styles.centre}>
             <ActivityIndicator size="large" color="#2563eb" />
@@ -72,7 +85,7 @@ export default function MarketScreen() {
           </View>
         )}
 
-        {/* Error */}
+        {/* error state with retry button if the api call fails */}
         {error && (
           <View style={styles.centre}>
             <FontAwesome name="exclamation-triangle" size={32} color="#dc2626" />
@@ -84,10 +97,10 @@ export default function MarketScreen() {
           </View>
         )}
 
-        {/* Data */}
+        {/* data view - shown once the api call succeeds */}
         {loaded && data.length > 0 && !loading && (
           <>
-            {/* Summary card */}
+            {/* summary card showing the latest rate and change from previous month */}
             <View style={styles.summaryCard}>
               <View style={styles.summaryMain}>
                 <Text style={styles.summaryRate}>{latest.rate}%</Text>
@@ -96,6 +109,7 @@ export default function MarketScreen() {
               </View>
               {delta !== null && (
                 <View style={styles.summaryDelta}>
+                  {/* arrow icon colour depends on whether rate went up or down */}
                   <FontAwesome
                     name={delta < 0 ? 'arrow-down' : delta > 0 ? 'arrow-up' : 'minus'}
                     size={16}
@@ -111,14 +125,16 @@ export default function MarketScreen() {
               )}
             </View>
 
-            {/* Trend bars */}
+            {/* horizontal bar chart showing the 13 month trend */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>13-Month Trend</Text>
               {data.map((point, i) => {
+                // calculate bar width as a percentage of the maximum rate
                 const barPct = (point.rate / maxRate) * 100;
                 const isLatest = i === data.length - 1;
                 return (
                   <View key={i} style={styles.row}>
+                    {/* highlight the most recent period in bold */}
                     <Text style={[styles.rowPeriod, isLatest && styles.rowPeriodLatest]}>
                       {point.period}
                     </Text>
@@ -127,6 +143,7 @@ export default function MarketScreen() {
                         <View style={[
                           styles.barFill,
                           { width: `${barPct}%` as any },
+                          // latest bar is blue, older bars are grey
                           isLatest && styles.barFillLatest,
                         ]} />
                       </View>
@@ -137,6 +154,7 @@ export default function MarketScreen() {
                   </View>
                 );
               })}
+              {/* data source attribution */}
               <Text style={styles.source}>
                 Source: Eurostat une_rt_m — Seasonally adjusted, all ages
               </Text>
@@ -149,6 +167,7 @@ export default function MarketScreen() {
   );
 }
 
+// styles defined as a function to support light and dark theme colours
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     safe:   { flex: 1, backgroundColor: c.background },

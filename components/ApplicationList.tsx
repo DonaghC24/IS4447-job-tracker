@@ -1,9 +1,14 @@
-import React, { useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { ApplicationWithCategory } from '@/db/schema';
+// renders the scrollable list of job application cards
+// shows different empty states depending on whether filters are active or no data exists
+// each card displays company, role, status badge, category, date, notes and action buttons
+
 import EmptyState from '@/components/EmptyState';
 import { useAppTheme, type AppColors } from '@/context/ThemeContext';
+import { ApplicationWithCategory } from '@/db/schema';
+import React, { useMemo } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+// colour mapping for each application status badge
 const STATUS_COLORS: Record<string, string> = {
   Applied:   '#2563eb',
   Interview: '#d97706',
@@ -22,6 +27,7 @@ export default function ApplicationList({ applications, isFiltered, onEdit, onDe
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  // show appropriate empty state based on whether filters are active
   if (applications.length === 0) {
     return isFiltered ? (
       <EmptyState icon="search" message="No results found" subMessage="Try adjusting your filters or search term." />
@@ -38,33 +44,20 @@ export default function ApplicationList({ applications, isFiltered, onEdit, onDe
       accessibilityLabel="Job applications list"
       renderItem={({ item }) => (
         <View style={styles.card} accessible={false}>
+          {/* card header with company/role and status badge */}
           <View style={styles.cardHeader}>
-            <View
-              style={styles.cardTitles}
-              accessible={true}
-              accessibilityRole="text"
-              accessibilityLabel={`${item.role} at ${item.company}`}
-            >
+            <View style={styles.cardTitles} accessible={true} accessibilityRole="text" accessibilityLabel={`${item.role} at ${item.company}`}>
               <Text style={styles.company}>{item.company}</Text>
               <Text style={styles.role}>{item.role}</Text>
             </View>
-            <View
-              style={[styles.badge, { backgroundColor: STATUS_COLORS[item.status] ?? '#666' }]}
-              accessible={true}
-              accessibilityRole="text"
-              accessibilityLabel={`Status: ${item.status}`}
-            >
+            <View style={[styles.badge, { backgroundColor: STATUS_COLORS[item.status] ?? '#666' }]} accessible={true} accessibilityRole="text" accessibilityLabel={`Status: ${item.status}`}>
               <Text style={styles.badgeText}>{item.status}</Text>
             </View>
           </View>
 
+          {/* category dot and date applied */}
           <View style={styles.cardMeta}>
-            <View
-              style={styles.categoryTag}
-              accessible={true}
-              accessibilityRole="text"
-              accessibilityLabel={`Category: ${item.categoryName ?? 'Unknown'}`}
-            >
+            <View style={styles.categoryTag} accessible={true} accessibilityRole="text" accessibilityLabel={`Category: ${item.categoryName ?? 'Unknown'}`}>
               <View style={[styles.catDot, { backgroundColor: item.categoryColor ?? '#999' }]} />
               <Text style={styles.meta}>{item.categoryName ?? '—'}</Text>
             </View>
@@ -73,25 +66,17 @@ export default function ApplicationList({ applications, isFiltered, onEdit, onDe
             </Text>
           </View>
 
+          {/* optional notes shown in italics if present */}
           {item.notes ? (
             <Text style={styles.notes} accessibilityLabel={`Notes: ${item.notes}`}>{item.notes}</Text>
           ) : null}
 
+          {/* edit and delete action buttons */}
           <View style={styles.cardActions}>
-            <TouchableOpacity
-              style={styles.editBtn}
-              onPress={() => onEdit(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${item.role} at ${item.company}`}
-            >
+            <TouchableOpacity style={styles.editBtn} onPress={() => onEdit(item)} accessibilityRole="button" accessibilityLabel={`Edit ${item.role} at ${item.company}`}>
               <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={() => onDelete(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`Delete ${item.role} at ${item.company}`}
-            >
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(item)} accessibilityRole="button" accessibilityLabel={`Delete ${item.role} at ${item.company}`}>
               <Text style={styles.deleteText}>Delete</Text>
             </TouchableOpacity>
           </View>
@@ -101,6 +86,7 @@ export default function ApplicationList({ applications, isFiltered, onEdit, onDe
   );
 }
 
+// styles defined as a function to support light and dark theme colours
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     list: { padding: 12, gap: 10 },

@@ -1,10 +1,19 @@
+// form component for creating and editing categories
+// lets the user set a name and pick a colour from a preset palette
+// shows a live preview of how the category will look before saving
+
+import { useAppTheme, type AppColors } from '@/context/ThemeContext';
+import { Category, NewCategory } from '@/db/schema';
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text, TextInput, TouchableOpacity,
+  View,
 } from 'react-native';
-import { Category, NewCategory } from '@/db/schema';
-import { useAppTheme, type AppColors } from '@/context/ThemeContext';
 
+// preset colour options for categories
 const COLOR_PALETTE = [
   '#2563eb', '#16a34a', '#d97706', '#dc2626',
   '#7c3aed', '#0891b2', '#db2777', '#65a30d',
@@ -21,6 +30,7 @@ export default function CategoryForm({ initial, onSubmit, onCancel }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  // pre-populate fields when editing an existing category
   const [name, setName]   = useState(initial?.name ?? '');
   const [color, setColor] = useState(initial?.color ?? COLOR_PALETTE[0]);
 
@@ -46,6 +56,7 @@ export default function CategoryForm({ initial, onSubmit, onCancel }: Props) {
         autoFocus
       />
 
+      {/* colour picker - highlights the currently selected swatch */}
       <Text style={styles.label}>Colour *</Text>
       <View style={styles.swatchRow}>
         {COLOR_PALETTE.map((c) => (
@@ -57,6 +68,7 @@ export default function CategoryForm({ initial, onSubmit, onCancel }: Props) {
         ))}
       </View>
 
+      {/* live preview showing the chosen colour dot and category name */}
       <View style={styles.preview}>
         <View style={[styles.previewDot, { backgroundColor: color }]} />
         <Text style={styles.previewText}>{name || 'Preview'}</Text>
@@ -74,6 +86,7 @@ export default function CategoryForm({ initial, onSubmit, onCancel }: Props) {
   );
 }
 
+// styles defined as a function to support light and dark theme colours
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container:    { padding: 16, backgroundColor: c.surfaceAlt },

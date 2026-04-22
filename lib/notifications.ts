@@ -1,7 +1,12 @@
-import * as Notifications from 'expo-notifications';
+// notifications utility - manages scheduling and cancelling daily reminders
+// settings (enabled, hour, minute) are persisted in async storage
+// on android a notification channel is created as required by the platform
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+// async storage keys for persisting notification settings
 const DAILY_ID_KEY   = 'notif_daily_id';
 const ENABLED_KEY    = 'notif_enabled';
 const HOUR_KEY       = 'notif_hour';
@@ -13,10 +18,10 @@ export type NotifSettings = {
   minute:  number;
 };
 
+// default to disabled with an 8pm reminder time
 export const DEFAULT_SETTINGS: NotifSettings = { enabled: false, hour: 20, minute: 0 };
 
-// ── Permissions ───────────────────────────────────────────────────────────────
-
+// request notification permissions - creates an android channel if needed
 export async function requestPermissions(): Promise<boolean> {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('job-reminders', {
@@ -33,8 +38,7 @@ export async function requestPermissions(): Promise<boolean> {
   return status === 'granted';
 }
 
-// ── Persist settings ──────────────────────────────────────────────────────────
-
+// save notification settings to async storage
 export async function saveSettings(s: NotifSettings): Promise<void> {
   await AsyncStorage.multiSet([
     [ENABLED_KEY, String(s.enabled)],
@@ -43,6 +47,7 @@ export async function saveSettings(s: NotifSettings): Promise<void> {
   ]);
 }
 
+// load notification settings from async storage, falling back to defaults
 export async function loadSettings(): Promise<NotifSettings> {
   const pairs = await AsyncStorage.multiGet([ENABLED_KEY, HOUR_KEY, MINUTE_KEY]);
   const map   = Object.fromEntries(pairs.map(([k, v]) => [k, v]));
@@ -53,8 +58,7 @@ export async function loadSettings(): Promise<NotifSettings> {
   };
 }
 
-// ── Schedule / cancel ─────────────────────────────────────────────────────────
-
+// cancel any existing reminder then schedule a new daily notification at the given time
 export async function scheduleDailyReminder(hour: number, minute: number): Promise<void> {
   await cancelDailyReminder();
 
@@ -71,9 +75,11 @@ export async function scheduleDailyReminder(hour: number, minute: number): Promi
     },
   });
 
+  // store the notification id so we can cancel it later
   await AsyncStorage.setItem(DAILY_ID_KEY, id);
 }
 
+// cancel the currently scheduled daily reminder if one exists
 export async function cancelDailyReminder(): Promise<void> {
   const id = await AsyncStorage.getItem(DAILY_ID_KEY);
   if (id) {
@@ -82,6 +88,7 @@ export async function cancelDailyReminder(): Promise<void> {
   }
 }
 
+// save settings and either schedule or cancel the reminder based on the enabled flag
 export async function applySettings(s: NotifSettings): Promise<void> {
   await saveSettings(s);
   if (s.enabled) {

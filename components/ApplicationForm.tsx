@@ -1,9 +1,17 @@
+// reusable form component for adding and editing job applications
+// works in both add and edit mode depending on whether an initial value is passed in
+// validates required fields before calling the onsubmit callback
+
+import { useAppTheme, type AppColors } from '@/context/ThemeContext';
+import { Application, Category, NewApplication } from '@/db/schema';
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text, TextInput, TouchableOpacity,
+  View,
 } from 'react-native';
-import { Application, Category, NewApplication } from '@/db/schema';
-import { useAppTheme, type AppColors } from '@/context/ThemeContext';
 
 const STATUSES = ['Applied', 'Interview', 'Offer', 'Rejected'];
 
@@ -18,6 +26,7 @@ export default function ApplicationForm({ initial, categories, onSubmit, onCance
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  // form field state - pre-populated when editing an existing application
   const [company, setCompany]       = useState(initial?.company ?? '');
   const [role, setRole]             = useState(initial?.role ?? '');
   const [status, setStatus]         = useState(initial?.status ?? 'Applied');
@@ -27,6 +36,7 @@ export default function ApplicationForm({ initial, categories, onSubmit, onCance
   const [categoryId, setCategoryId] = useState<number | null>(initial?.categoryId ?? null);
   const [notes, setNotes]           = useState(initial?.notes ?? '');
 
+  // validate and submit the form data
   function handleSubmit() {
     if (!company.trim() || !role.trim() || !dateApplied) {
       Alert.alert('Validation', 'Company, role, and date are required.');
@@ -80,6 +90,7 @@ export default function ApplicationForm({ initial, categories, onSubmit, onCance
         accessibilityLabel="Date applied, format YYYY-MM-DD"
       />
 
+      {/* status selector - rendered as a row of selectable chips */}
       <Text style={styles.label}>Status *</Text>
       <View style={styles.chipRow}>
         {STATUSES.map((s) => (
@@ -96,6 +107,7 @@ export default function ApplicationForm({ initial, categories, onSubmit, onCance
         ))}
       </View>
 
+      {/* category selector - uses the category colour for the chip border and fill */}
       <Text style={styles.label}>Category *</Text>
       {categories.length === 0 ? (
         <Text style={styles.noCats}>No categories yet — create one in the Categories tab first.</Text>
@@ -131,6 +143,7 @@ export default function ApplicationForm({ initial, categories, onSubmit, onCance
         accessibilityLabel="Notes, optional"
       />
 
+      {/* cancel and submit buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
           <Text style={styles.cancelText}>Cancel</Text>
@@ -143,6 +156,7 @@ export default function ApplicationForm({ initial, categories, onSubmit, onCance
   );
 }
 
+// styles defined as a function to support light and dark theme colours
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { padding: 16, backgroundColor: c.surfaceAlt },

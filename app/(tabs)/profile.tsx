@@ -1,19 +1,33 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  SafeAreaView, Alert, ActivityIndicator, Switch,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+// profile screen - user account management and app settings
+// handles theme toggling, notification scheduling, csv export, logout and account deletion
+// notification time is persisted locally and rescheduled whenever the setting changes
+
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type AppColors } from '@/context/ThemeContext';
 import { deleteUser } from '@/db/queries';
 import { exportApplicationsCsv } from '@/lib/exportCsv';
 import {
-  loadSettings, applySettings, requestPermissions,
-  type NotifSettings, DEFAULT_SETTINGS,
+  applySettings,
+  DEFAULT_SETTINGS,
+  loadSettings,
+  requestPermissions,
+  type NotifSettings,
 } from '@/lib/notifications';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text, TouchableOpacity,
+  View,
+} from 'react-native';
 
+// preset reminder times the user can choose from
 const TIME_PRESETS = [
   { label: '8 AM',  hour: 8,  minute: 0 },
   { label: '12 PM', hour: 12, minute: 0 },
@@ -28,15 +42,19 @@ export default function ProfileScreen() {
   const { mode, colors, toggleTheme } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  // loading states for async actions
   const [deleting,  setDeleting]  = useState(false);
   const [exporting, setExporting] = useState(false);
   const [savingNotif, setSavingNotif] = useState(false);
+  // notification settings loaded from async storage
   const [notifSettings, setNotifSettings] = useState<NotifSettings>(DEFAULT_SETTINGS);
 
+  // load saved notification settings when the screen mounts
   useEffect(() => {
     loadSettings().then(setNotifSettings);
   }, []);
 
+  // request permissions when enabling notifications, then apply the settings
   async function handleToggleNotif(val: boolean) {
     if (val) {
       const granted = await requestPermissions();
@@ -50,6 +68,7 @@ export default function ProfileScreen() {
     await applySettings(updated);
   }
 
+  // update the reminder time and reschedule if notifications are enabled
   async function handleSelectTime(hour: number, minute: number) {
     const updated = { ...notifSettings, hour, minute };
     setNotifSettings(updated);
@@ -62,6 +81,7 @@ export default function ProfileScreen() {
     }
   }
 
+  // export all applications to a csv file using the share sheet
   async function handleExport() {
     setExporting(true);
     try { await exportApplicationsCsv(); }
@@ -69,11 +89,13 @@ export default function ProfileScreen() {
     finally { setExporting(false); }
   }
 
+  // clear the session and redirect to login
   async function handleLogout() {
     await logout();
     router.replace('/(auth)/login');
   }
 
+  // show a confirmation alert before deleting the account
   function handleDeletePress() {
     Alert.alert(
       'Delete Account',
@@ -85,6 +107,7 @@ export default function ProfileScreen() {
     );
   }
 
+  // delete the user record from sqlite then log out
   async function confirmDelete() {
     if (!user) return;
     setDeleting(true);
@@ -92,12 +115,15 @@ export default function ProfileScreen() {
     finally { setDeleting(false); }
   }
 
+  // guard against rendering before user is loaded
   if (!user) return null;
 
+  // format the account creation date for display
   const joined = new Date(user.createdAt).toLocaleDateString('en-IE', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
 
+  // find which preset matches the current notification time
   const selectedPreset = TIME_PRESETS.find(
     p => p.hour === notifSettings.hour && p.minute === notifSettings.minute
   );
@@ -106,7 +132,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        {/* Avatar */}
+        {/* user avatar using the first letter of their username */}
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{user.username[0].toUpperCase()}</Text>
         </View>
@@ -115,7 +141,7 @@ export default function ProfileScreen() {
 
         <View style={styles.divider} />
 
-        {/* Theme toggle */}
+        {/* light/dark mode toggle */}
         <View style={styles.row}>
           <FontAwesome name={mode === 'dark' ? 'moon-o' : 'sun-o'} size={18} color={colors.textSecondary} style={styles.rowIcon} />
           <Text style={styles.rowLabel}>{mode === 'dark' ? 'Dark Mode' : 'Light Mode'}</Text>
@@ -128,11 +154,12 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Notifications */}
+        {/* notification settings card */}
         <View style={styles.notifCard}>
           <View style={styles.row}>
             <FontAwesome name="bell" size={16} color={colors.textSecondary} style={styles.rowIcon} />
             <Text style={styles.rowLabel}>Daily Reminder</Text>
+            {/* show spinner while saving notification settings */}
             {savingNotif && <ActivityIndicator size="small" color="#2563eb" style={{ marginRight: 8 }} />}
             <Switch
               value={notifSettings.enabled}
@@ -143,6 +170,7 @@ export default function ProfileScreen() {
             />
           </View>
 
+          {/* time picker chips - only shown when notifications are enabled */}
           {notifSettings.enabled && (
             <>
               <Text style={styles.timeLabel}>Reminder Time</Text>
@@ -165,6 +193,7 @@ export default function ProfileScreen() {
                   );
                 })}
               </View>
+              {/* confirmation text showing the currently selected time */}
               <Text style={styles.notifHint}>
                 {selectedPreset
                   ? `Reminder set for ${selectedPreset.label} daily`
@@ -174,7 +203,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Export */}
+        {/* csv export button */}
         <TouchableOpacity
           style={[styles.exportBtn, exporting && styles.btnDisabled]}
           onPress={handleExport}
@@ -192,10 +221,12 @@ export default function ProfileScreen() {
 
         <View style={styles.divider} />
 
+        {/* sign out button */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} accessibilityRole="button" accessibilityLabel="Sign out">
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
+        {/* delete account button - destructive action with confirmation */}
         <TouchableOpacity
           style={[styles.deleteBtn, deleting && styles.btnDisabled]}
           onPress={handleDeletePress}
@@ -211,6 +242,7 @@ export default function ProfileScreen() {
   );
 }
 
+// styles defined as a function to support light and dark theme colours
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     safe:      { flex: 1, backgroundColor: c.background },

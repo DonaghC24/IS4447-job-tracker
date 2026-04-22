@@ -1,9 +1,17 @@
+// form component for creating and editing targets
+// targets can be set for a specific period (weekly or monthly) and optionally scoped to a category
+// selecting 'all categories' sets categoryId to null which means the target applies globally
+
+import { useAppTheme, type AppColors } from '@/context/ThemeContext';
+import { Category, NewTarget, Target } from '@/db/schema';
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text, TextInput, TouchableOpacity,
+  View,
 } from 'react-native';
-import { Category, NewTarget, Target } from '@/db/schema';
-import { useAppTheme, type AppColors } from '@/context/ThemeContext';
 
 type Props = {
   initial?: Target;
@@ -16,10 +24,12 @@ export default function TargetForm({ initial, categories, onSubmit, onCancel }: 
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  // pre-populate fields when editing an existing target
   const [period, setPeriod]       = useState<'weekly' | 'monthly'>(initial?.period ?? 'weekly');
   const [countText, setCountText] = useState(initial?.count != null ? String(initial.count) : '');
   const [categoryId, setCategoryId] = useState<number | null>(initial?.categoryId ?? null);
 
+  // validate and submit the form data
   function handleSubmit() {
     const parsed = parseInt(countText, 10);
     if (!countText.trim() || isNaN(parsed) || parsed <= 0) {
@@ -33,6 +43,7 @@ export default function TargetForm({ initial, categories, onSubmit, onCancel }: 
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>{initial ? 'Edit Target' : 'New Target'}</Text>
 
+      {/* period selector - weekly or monthly */}
       <Text style={styles.label}>Period *</Text>
       <View style={styles.chipRow}>
         {(['weekly', 'monthly'] as const).map((p) => (
@@ -58,6 +69,7 @@ export default function TargetForm({ initial, categories, onSubmit, onCancel }: 
         keyboardType="numeric"
       />
 
+      {/* category selector - all categories option sets categoryid to null */}
       <Text style={styles.label}>Category</Text>
       <View style={styles.chipRow}>
         <TouchableOpacity
@@ -97,6 +109,7 @@ export default function TargetForm({ initial, categories, onSubmit, onCancel }: 
   );
 }
 
+// styles defined as a function to support light and dark theme colours
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { padding: 16, backgroundColor: c.surfaceAlt },

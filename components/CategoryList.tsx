@@ -1,8 +1,12 @@
-import React, { useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { Category } from '@/db/schema';
+// renders the list of categories with edit and delete actions
+// shows an empty state if no categories have been created yet
+// each row displays the category colour dot, name and action buttons
+
 import EmptyState from '@/components/EmptyState';
 import { useAppTheme, type AppColors } from '@/context/ThemeContext';
+import { Category } from '@/db/schema';
+import React, { useMemo } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
   categories: Category[];
@@ -14,6 +18,7 @@ export default function CategoryList({ categories, onEdit, onDelete }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  // show empty state if no categories exist yet
   if (categories.length === 0) {
     return (
       <EmptyState icon="tags" message="No categories yet" subMessage="Tap + to create your first category." />
@@ -28,30 +33,17 @@ export default function CategoryList({ categories, onEdit, onDelete }: Props) {
       accessibilityLabel="Categories list"
       renderItem={({ item }) => (
         <View style={styles.row} accessible={false}>
-          <View
-            style={[styles.dot, { backgroundColor: item.color }]}
-            accessible={true}
-            accessibilityRole="image"
-            accessibilityLabel={`Colour: ${item.color}`}
-          />
+          {/* coloured dot representing the category colour */}
+          <View style={[styles.dot, { backgroundColor: item.color }]} accessible={true} accessibilityRole="image" accessibilityLabel={`Colour: ${item.color}`} />
           <Text style={styles.name} accessible={true} accessibilityRole="text">
             {item.name}
           </Text>
+          {/* edit and delete buttons */}
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.editBtn}
-              onPress={() => onEdit(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${item.name} category`}
-            >
+            <TouchableOpacity style={styles.editBtn} onPress={() => onEdit(item)} accessibilityRole="button" accessibilityLabel={`Edit ${item.name} category`}>
               <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={() => onDelete(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`Delete ${item.name} category`}
-            >
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(item)} accessibilityRole="button" accessibilityLabel={`Delete ${item.name} category`}>
               <Text style={styles.deleteText}>Delete</Text>
             </TouchableOpacity>
           </View>
@@ -61,6 +53,7 @@ export default function CategoryList({ categories, onEdit, onDelete }: Props) {
   );
 }
 
+// styles defined as a function to support light and dark theme colours
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     list: { padding: 12, gap: 8 },
