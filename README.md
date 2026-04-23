@@ -1,13 +1,20 @@
-> Why do I have a folder named ".expo" in my project?
 
-The ".expo" folder is created when an Expo project is started using "expo start" command.
+# git repo link
+https://github.com/DonaghC24/IS4447-job-tracker.git
 
-> What do the files contain?
+# expo links
+https://expo.dev/preview/update?message=Final+submission&updateRuntimeVersion=1.0.0&createdAt=2026-04-23T10%3A35%3A32.935Z&slug=exp&projectId=95be1c3e-79ec-4d65-9ac6-65b5a946c46d&group=a9131a9e-f234-4b94-9d1c-c99e79269fee
 
-- "devices.json": contains information about devices that have recently opened this project. This is used to populate the "Development sessions" list in your development builds.
-- "settings.json": contains the server configuration that is used to serve the application manifest.
+exp://u.expo.dev/95be1c3e-79ec-4d65-9ac6-65b5a946c46d/group/a9131a9e-f234-4b94-9d1c-c99e79269fee
 
-> Should I commit the ".expo" folder?
+# QR code
+![alt text](image-1.png)
 
-No, you should not share the ".expo" folder. It does not contain any information that is relevant for other developers working on the project, it is specific to your machine.
-Upon project creation, the ".expo" folder is already added to your ".gitignore" file.
+
+# app name and option
+My Job Tracker
+option C: Job Application Tracker
+
+
+# installation instuctions:
+npm install and npx expo start
